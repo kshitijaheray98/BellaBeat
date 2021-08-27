@@ -5,9 +5,10 @@ date: "`r format(Sys.Date(), '%A, %B %e %Y')` "
 output: 
   html_document:
     toc: yes
-subtitle: Case Study for the Wellness Company
+subtitle: Exploratory Data Analysis for a Wellness Company
   
 ---
+
 
 ```{r eval = FALSE}
 #install.packages("tidyverse")
@@ -33,7 +34,7 @@ library(lubridate)
 
 Let's load the data
 
-```{r Load Data eval = TRUE}
+```{r eval = TRUE}
 daily_activity <- read_csv("data/dailyActivity_merged.csv")
 head(daily_activity, n=10)
 ```
@@ -76,7 +77,7 @@ We see that we have a data of 33 women who recorded their daily activity using B
 
 ### DATA EXPLORATION 
 
-```{r Calories Burned vs Total Steps eval = TRUE}
+```{r eval = TRUE}
 
 daily_activity %>% 
   ggplot(aes(x = TotalSteps,
@@ -94,39 +95,95 @@ Let's explore in detail what other factors come into play into burning more calo
 ```{r eval = TRUE}
 daily_activity <- daily_activity %>% 
   drop_na() %>% 
-  mutate(Dist_Category = ifelse(TotalDistance < 10, 'Less than 10 miles',
-                         ifelse(TotalDistance >= 10 & TotalDistance <= 20, 'Between 10 and 20', 
-                         'More than 20'))) %>% 
-mutate(Dist_Category = factor(Dist_Category, levels = c("Less than 10 miles", "Between 10 and 20", "More than 20")))
+  mutate(Dist_Category = ifelse(TotalDistance < 4, 'Less than 4 miles',
+                         ifelse(TotalDistance >= 4 & TotalDistance <= 7, 'Between 4 and 7 miles', 
+                         'More than 7 miles'))) %>% 
+mutate(Dist_Category = factor(Dist_Category, levels = c("Less than 4 miles", "Between 4 and 7 miles", "More than 7 miles")))
  
 daily_activity
   
 ```
 
 
+```{r}
+daily_activity <- daily_activity %>% 
+  drop_na() %>% 
+  mutate(TotalSteps_Category = ifelse(TotalSteps < 6000, 'Less than 6k steps',
+                         ifelse(TotalSteps >= 6000 & TotalSteps <= 10000, 'Between 6k and 10k steps', 
+                         'More than 10k'))) %>% 
+mutate(TotalSteps_Category = factor(TotalSteps_Category, levels = c("Less than 6k steps", "Between 6k and 10k steps", "More than 10k")))
+ 
+daily_activity
+```
+```{r}
+summary(daily_activity)
+```
 
-```{r Calories Burned vs Distance eval = TRUE}
+
+We could observe :
+The average women seems to walk more number of steps but eventually cover less distance. 
+
+
+
+
+
+```{r}
 daily_activity %>% 
-  ggplot(aes(x = Dist_Category,
-             y = Calories)) +
-  geom_jitter(alpha = 0.1) +
-  geom_boxplot()
+ggplot(aes(TotalSteps_Category,Calories)) +
+  geom_boxplot() +
+  geom_jitter(alpha = 0.1)+
   
-
-
+    labs(title="Calories burned by Steps",x=NULL)
 ```
 
 
 
 
+Before moving on to additional factors involved in burning more calories with less or the same number of steps, let's take another look at the link between Calories Burned and Steps Taken.
+
+There is an even distribution of women walking from less than 6k steps to more than 10k. 
+
+```{r}
+daily_activity %>% 
+ggplot(aes(Dist_Category,Calories)) +
+  geom_boxplot() +
+  geom_jitter(alpha = 0.1)+
+  
+    labs(title="Calories burned by Distance",x=NULL)
+```
 
 
 
 
+We can see that when women walk longer distances, they burn more calories.
+This could be a contributing factor to burn m
+
+We also notice, For the majority of the time, many women walk fewer than 10 miles each day. We can assume they have a set path that they take every day, either for work or as part of their daily fitness routine.
+
+```{r}
+daily_activity %>% 
+ggplot(aes(TotalSteps_Category,Calories,fill=TotalSteps_Category)) +
+  geom_boxplot() +
+    facet_wrap(~Dist_Category)+
+  
+    labs(title="Calories burned by Steps and Distance",x=NULL) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+
+```
 
 
 
+Different distance, Different number of steps:
 
+"More than 10k steps" in "between 4 and 7 miles" and "less than 6k steps" in "less than 4 miles" both burn the same amount of calories.
+
+
+Same distance, Different number of steps:
+
+In "More than 7 miles", more calories are burned with less number of steps (between 6-10k) than more than 10k. 
+
+This reinforces the idea that speed is one of the most important factor to burn calories. 
 
 
 
