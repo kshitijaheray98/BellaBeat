@@ -1,0 +1,29 @@
+---
+title: "BellaBeat"
+author: "Kshitija Hire"
+date: "`r format(Sys.Date(), '%A, %B %e %Y')` "
+output: 
+  html_document:
+    toc: yes
+subtitle: Case Study for the Wellness Company
+  
+---
+
+```{r eval = FALSE}
+#install.packages("tidyverse")
+```
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      eval = TRUE, 
+                      cache = FALSE, 
+                      cache.lazy = FALSE )
+```
+
+Load the data wrangling package here.
+
+```{r libraries, eval = TRUE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(lubridate)
+```
