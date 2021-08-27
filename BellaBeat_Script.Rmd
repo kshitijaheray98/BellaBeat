@@ -27,3 +27,115 @@ Load the data wrangling package here.
 library(tidyverse)
 library(lubridate)
 ```
+
+### LOADING AND VIEWING THE DATA
+
+
+Let's load the data
+
+```{r Load Data eval = TRUE}
+daily_activity <- read_csv("data/dailyActivity_merged.csv")
+head(daily_activity, n=10)
+```
+
+
+```{r eval = TRUE}
+str(daily_activity)
+```
+
+### DATA CLEANING
+
+```{r eval = TRUE}
+# changing the Date format
+daily_activity <- daily_activity %>% 
+  rename(Date = ActivityDate) %>% 
+  mutate(Date = as.Date(Date, format = "%m/%d/%y"))
+  #dmy(Date)
+
+daily_activity
+  
+```
+
+
+
+```{r eval = TRUE}
+# Dropping unwanted columns
+daily_activity <-  daily_activity %>% 
+  select(-c(TrackerDistance, SedentaryActiveDistance))
+daily_activity
+```
+
+
+```{r eval = TRUE}
+#Calculate unique number of participants
+daily_activity %>% count(Id)
+```
+We see that we have a data of 33 women who recorded their daily activity using Bella Beat Fitbit for 31 days. 
+
+
+
+### DATA EXPLORATION 
+
+```{r Calories Burned vs Total Steps eval = TRUE}
+
+daily_activity %>% 
+  ggplot(aes(x = TotalSteps,
+             y = Calories)) +
+  geom_point()+
+  geom_smooth()
+
+```
+There is an evident positive relation between the total number of steps taken by a participant and the calories burned by them. But, it is not the only reason for their burning calories as the plot is quite scattered. 
+
+For example, Lets take 10,000 steps. The calories burned for one participant are 1500 and for other, it is 4000. Which is a huge difference.  
+
+Let's explore in detail what other factors come into play into burning more calories for the same number of steps taken. 
+
+```{r eval = TRUE}
+daily_activity <- daily_activity %>% 
+  drop_na() %>% 
+  mutate(Dist_Category = ifelse(TotalDistance < 10, 'Less than 10 miles',
+                         ifelse(TotalDistance >= 10 & TotalDistance <= 20, 'Between 10 and 20', 
+                         'More than 20'))) %>% 
+mutate(Dist_Category = factor(Dist_Category, levels = c("Less than 10 miles", "Between 10 and 20", "More than 20")))
+ 
+daily_activity
+  
+```
+
+
+
+```{r Calories Burned vs Distance eval = TRUE}
+daily_activity %>% 
+  ggplot(aes(x = Dist_Category,
+             y = Calories)) +
+  geom_jitter(alpha = 0.1) +
+  geom_boxplot()
+  
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
