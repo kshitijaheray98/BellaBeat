@@ -9,6 +9,12 @@ subtitle: Exploratory Data Analysis for a Wellness Company
   
 ---
 
+Bellabeat is a high-tech manufacturer of health-focused products for women. Its goal is to become a large player in the global smart device market.
+
+The data on which we are going to do our analysis has been collected from a BellaBeat smart device product. This product records physical activity, heart rate, and sleeping patterns. 
+
+We will divide our analysis in three categories: DATA LOADING, DATA CLEANING AND MANIPULATION AND DATA EXPLORATION
+
 
 ```{r eval = FALSE}
 #install.packages("tidyverse")
@@ -22,47 +28,50 @@ knitr::opts_chunk$set(echo = TRUE,
                       cache.lazy = FALSE )
 ```
 
-Load the data wrangling package here.
+# DATA LOADING
 
 ```{r libraries, eval = TRUE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(lubridate)
+library(plotly)
 ```
 
-### LOADING AND VIEWING THE DATA
-
-
-Let's load the data
+### Viewing the datasets
 
 ```{r eval = TRUE}
 daily_activity <- read_csv("data/dailyActivity_merged.csv")
+hourly_calories <- read_csv("data/hourlyCalories_merged.csv")
+hourly_steps <- read_csv("data/hourlySteps_merged.csv")
+
 head(daily_activity, n=10)
 ```
 
+### Checking the variables
 
 ```{r eval = TRUE}
 str(daily_activity)
 ```
 
-### DATA CLEANING
+# DATA CLEANING AND MANIPULATION
+
+### Adjusting the formats
 
 ```{r eval = TRUE}
 # changing the Date format
 daily_activity <- daily_activity %>% 
   rename(Date = ActivityDate) %>% 
-  mutate(Date = as.Date(Date, format = "%m/%d/%y"))
-  #dmy(Date)
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"))
 
 daily_activity
   
 ```
 
-
+### Removing unwanted columns
 
 ```{r eval = TRUE}
 # Dropping unwanted columns
 daily_activity <-  daily_activity %>% 
-  select(-c(TrackerDistance, SedentaryActiveDistance))
+  select(-c(TrackerDistance, SedentaryActiveDistance, LoggedActivitiesDistance, VeryActiveDistance:SedentaryMinutes ))
 daily_activity
 ```
 
@@ -71,19 +80,47 @@ daily_activity
 #Calculate unique number of participants
 daily_activity %>% count(Id)
 ```
-We see that we have a data of 33 women who recorded their daily activity using Bella Beat Fitbit for 31 days. 
+
+
+We see that we have a data of 33 women who recorded their daily activity using Bella Beat smart device product for 31 days. 
 
 
 
-### DATA EXPLORATION 
+# DATA EXPLORATION 
+
+## Calories burned by Total steps taken
+
+```{r}
+custom_theme <- function() {
+  theme(
+     panel.background = element_rect(fill = "white", color = 'grey50'),
+     axis.text = element_text(colour = "black", 
+                             face = "italic", 
+                             family = "Helvetica"),
+    axis.title = element_text(colour = "black", 
+                              family = "Helvetica"),
+    axis.ticks = element_line(colour = "black"),
+    plot.title = element_text(size=23, 
+                              hjust = 0.5, 
+                              family = "Helvetica")
+  )
+}
+```
+
 
 ```{r eval = TRUE}
 
 daily_activity %>% 
   ggplot(aes(x = TotalSteps,
              y = Calories)) +
-  geom_point()+
-  geom_smooth()
+  geom_point(aes(colour = Calories))+
+  geom_smooth()+
+  custom_theme()+
+  labs(title = 'Calories burned by total steps taken',
+       y = 'Calories',
+       x = 'Total Steps',
+       caption = 'Data Source: FitBit Fitness Tracker Data')
+  ggplotly() 
 
 ```
 There is an evident positive relation between the total number of steps taken by a participant and the calories burned by them. But, it is not the only reason for their burning calories as the plot is quite scattered. 
@@ -91,6 +128,8 @@ There is an evident positive relation between the total number of steps taken by
 For example, Lets take 10,000 steps. The calories burned for one participant are 1500 and for other, it is 4000. Which is a huge difference.  
 
 Let's explore in detail what other factors come into play into burning more calories for the same number of steps taken. 
+
+### Dividing the distance data into three categories for easier analysis
 
 ```{r eval = TRUE}
 daily_activity <- daily_activity %>% 
@@ -103,6 +142,7 @@ mutate(Dist_Category = factor(Dist_Category, levels = c("Less than 4 miles", "Be
 daily_activity
   
 ```
+### Dividing the Total Steps data into three categories for easier analysis
 
 
 ```{r}
@@ -121,50 +161,46 @@ summary(daily_activity)
 
 
 We could observe :
-The average women seems to walk more number of steps but eventually cover less distance. 
+The average women seems to walk more number of steps but eventually cover less distance.
 
 
-
+Before moving on to additional factors involved in burning more calories with less or the same number of steps, let's take another look at the link between Calories Burned and Steps Taken.
 
 
 ```{r}
 daily_activity %>% 
 ggplot(aes(TotalSteps_Category,Calories)) +
   geom_boxplot() +
-  geom_jitter(alpha = 0.1)+
+  geom_jitter(alpha = 0.1, aes(colour = Calories))+
+  custom_theme()+
   
     labs(title="Calories burned by Steps",x=NULL)
+
 ```
 
-
-
-
-Before moving on to additional factors involved in burning more calories with less or the same number of steps, let's take another look at the link between Calories Burned and Steps Taken.
-
 There is an even distribution of women walking from less than 6k steps to more than 10k. 
+
+## Calories burned by Distance
 
 ```{r}
 daily_activity %>% 
 ggplot(aes(Dist_Category,Calories)) +
   geom_boxplot() +
-  geom_jitter(alpha = 0.1)+
+  geom_jitter(alpha = 0.1,aes(colour = Calories))+
+  custom_theme()+
   
     labs(title="Calories burned by Distance",x=NULL)
 ```
 
-
-
-
 We can see that when women walk longer distances, they burn more calories.
-This could be a contributing factor to burn m
 
-We also notice, For the majority of the time, many women walk fewer than 10 miles each day. We can assume they have a set path that they take every day, either for work or as part of their daily fitness routine.
 
 ```{r}
 daily_activity %>% 
 ggplot(aes(TotalSteps_Category,Calories,fill=TotalSteps_Category)) +
   geom_boxplot() +
     facet_wrap(~Dist_Category)+
+  custom_theme()+
   
     labs(title="Calories burned by Steps and Distance",x=NULL) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -186,10 +222,85 @@ In "More than 7 miles", more calories are burned with less number of steps (betw
 This reinforces the idea that speed is one of the most important factor to burn calories. 
 
 
+## Average Calories burned during the week
+```{r}
+
+daily_activity %>% 
+  mutate(weekdays = weekdays(Date)) %>%  
+  mutate(weekdays = factor(weekdays, levels = c('Monday','Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ))) %>% 
+  select(weekdays, TotalSteps, Calories) %>% 
+  group_by(weekdays) %>% 
+  summarise(avg_cal = mean(Calories, na.rm = TRUE),
+            avg_steps = mean(TotalSteps, na.rm = TRUE)) %>% 
+  ggplot(aes(x = weekdays, y = avg_cal))+
+  geom_col(aes(fill = avg_steps))+
+  
+  custom_theme()+
+   labs(title = 'Average calories burned through the week',
+       y = 'Average Calories',
+       x = 'Day of the Week',
+       caption = 'Data Source: FitBit Fitness Tracker Data',
+       legend = 'Average Steps') 
+ggplotly()
+  
+
+```
+
+The participating women seems to be fairly active throughout the week. The maximum number of average Calories burned are on Sunday followed by Thursday which is equally surprising.
 
 
+To add in some more information, I have added the average steps taken each day of the week and the result is predictable.
 
 
+Since, there is not much of a difference in average calories throughout the week, we should narrow it down to each day by hour to try and see some pattern. 
+
+
+### Let's try and use the hourlyCalorie dataset
+
+```{r}
+#Formatting the Date column
+hourly_calories <- hourly_calories %>% 
+  rename(DateTime = ActivityHour) %>% 
+  mutate(DateTime = as_datetime(DateTime, format="%m/%d/%Y %I:%M:%S %p")) 
+
+#Adding seperate Date column
+  hourly_calories$Date <- as.Date(hourly_calories$DateTime) 
+  
+#Adding seperate Time Column  
+  hourly_calories$Time <- format(hourly_calories$DateTime,format = "%H:%M:%S")
+
+```
+
+
+### View the Dataset
+```{r}
+str(hourly_calories)
+```
+
+### Left join the two datasets
+```{r}
+merge1 <- left_join(daily_activity, hourly_calories, by = c('Id','Date'))
+merge1
+```
+
+## Average Calories burned per hour
+```{r}
+merge1 %>% 
+  select(Time, Calories.y, ) %>% 
+  group_by(Time) %>% 
+  summarise(Avg_calories_ph = mean(Calories.y, na.rm = TRUE)) %>% 
+  ggplot(aes(x = Time,
+             y = Avg_calories_ph)) +
+  geom_col(aes(fill = Avg_calories_ph))+
+  theme(axis.text.x = element_text(angle = 90)) +
+  custom_theme()+
+  labs(x = "Hour of the Day",
+       y = "Average Calories",
+       title ="Average Calories burned throughout the day")
+ggplotly()
+```
+
+We can see that maximum average number of calories are burned in the evening (5 pm to 7 pm) and during the lunch hour(12pm to 2pm). 
 
 
 
